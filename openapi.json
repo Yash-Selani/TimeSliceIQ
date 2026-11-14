@@ -1,0 +1,329 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TimeSliceIQ API",
+    "description": "Ask questions about YouTube videos with timestamped citations.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/ingest": {
+      "post": {
+        "tags": [
+          "ingest"
+        ],
+        "summary": "Ingest a YouTube video",
+        "operationId": "ingest_api_ingest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Chat about an ingested video",
+        "operationId": "chat_api_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnswerBlock": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "cites": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "type": "array",
+            "title": "Cites"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "AnswerBlock"
+      },
+      "ChatMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "pattern": "^(user|assistant)$",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage"
+      },
+      "ChatRequest": {
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "title": "Video Id",
+            "description": "11-character YouTube video ID"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Question"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "title": "History"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_id",
+          "question"
+        ],
+        "title": "ChatRequest"
+      },
+      "ChatResponse": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerBlock"
+            },
+            "type": "array",
+            "title": "Blocks"
+          },
+          "follow_ups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Follow Ups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "blocks"
+        ],
+        "title": "ChatResponse"
+      },
+      "Citation": {
+        "properties": {
+          "chunk_id": {
+            "type": "string",
+            "title": "Chunk Id",
+            "description": "Chunk identifier like 'c0', 'c17'"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "Human-readable timestamp like '12:45'"
+          },
+          "seconds": {
+            "type": "number",
+            "title": "Seconds",
+            "description": "Timestamp in seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chunk_id",
+          "label",
+          "seconds"
+        ],
+        "title": "Citation"
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "INVALID_URL",
+          "NO_CAPTIONS",
+          "VIDEO_UNAVAILABLE",
+          "TRANSCRIPT_BLOCKED",
+          "RATE_LIMITED",
+          "LLM_FAILED"
+        ],
+        "title": "ErrorCode"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorResponse"
+      },
+      "IngestRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Url",
+            "description": "YouTube video URL"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "IngestRequest"
+      },
+      "IngestResponse": {
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "title": "Video Id",
+            "description": "11-character YouTube video ID"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "duration_s": {
+            "type": "integer",
+            "title": "Duration S",
+            "description": "Video duration in seconds"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "description": "Transcript language code"
+          },
+          "chunk_count": {
+            "type": "integer",
+            "title": "Chunk Count",
+            "description": "Number of indexed chunks"
+          },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptLine"
+            },
+            "type": "array",
+            "title": "Transcript",
+            "description": "Transcript grouped into ~10-15s lines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_id",
+          "title",
+          "channel",
+          "duration_s",
+          "language",
+          "chunk_count",
+          "transcript"
+        ],
+        "title": "IngestResponse"
+      },
+      "TranscriptLine": {
+        "properties": {
+          "start_s": {
+            "type": "number",
+            "title": "Start S",
+            "description": "Start time in seconds"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_s",
+          "text"
+        ],
+        "title": "TranscriptLine"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+cd c:\Users\yash2\OneDrive\Desktop\TimeSliceIQ\frontend
+npm run dev
+
+
+
+cd c:\Users\yash2\OneDrive\Desktop\TimeSliceIQ\backend
+uvicorn app.main:create_app --factory --reload --port 8000
+
+
+
+https://youtu.be/J7SXGbShbj8?si=_lPBWviW9cY7CzEq

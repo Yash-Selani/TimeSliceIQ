@@ -1,0 +1,87 @@
+.composerContainer {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-top: 1px solid var(--rule);
+  padding: var(--sp-2);
+  gap: var(--sp-1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  width: 100%;
+}
+
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 48px;
+  max-height: 160px;
+  box-sizing: border-box;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-family);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  resize: none;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.textarea:focus {
+  border-color: var(--accent);
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.counter {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.counterWarn {
+  color: var(--accent);
+}
+
+.counterLimit {
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.sendButton {
+  min-width: 64px;
+}

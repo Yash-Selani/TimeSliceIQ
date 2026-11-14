@@ -1,0 +1,8 @@
+{
+  "name": "timesliceiq-monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ]
+}
+

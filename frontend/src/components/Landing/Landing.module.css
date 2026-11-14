@@ -1,0 +1,132 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--sp-6) var(--sp-3);
+  max-width: var(--grid-max-width);
+  margin: 0 auto;
+  width: 100%;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 780px;
+}
+
+.headline {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text);
+  text-transform: uppercase;
+  margin: 0 0 var(--sp-3) 0;
+}
+
+@media (max-width: 768px) {
+  .headline {
+    font-size: clamp(2.5rem, 12vw, var(--fs-2xl));
+  }
+}
+
+.subhead {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-regular);
+  line-height: 1.4;
+  color: var(--text-muted);
+  margin: 0 0 var(--sp-5) 0;
+  max-width: 640px;
+}
+
+@media (max-width: 768px) {
+  .subhead {
+    font-size: var(--fs-base);
+    margin-bottom: var(--sp-4);
+  }
+}
+
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.inputGroup {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  border-radius: var(--radius);
+  transition: border-color var(--transition-fast);
+}
+
+.inputGroup:focus-within {
+  border-color: var(--accent);
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.inputGroupError {
+  border-color: var(--danger);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-family);
+  font-size: var(--fs-base);
+  padding: var(--sp-2) var(--sp-3);
+  outline: none;
+  min-width: 0;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.submitBtn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0 var(--sp-3);
+  cursor: pointer;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  transition: background-color var(--transition-fast), opacity var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.submitBtn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.errorText {
+  color: var(--danger);
+  font-size: var(--fs-xs);
+  margin-top: var(--sp-1);
+}

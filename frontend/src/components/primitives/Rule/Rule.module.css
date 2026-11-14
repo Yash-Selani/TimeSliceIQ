@@ -1,0 +1,53 @@
+.rule {
+  border: none;
+  background-color: var(--rule);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.horizontal {
+  height: 1px;
+  width: 100%;
+}
+
+.vertical {
+  width: 1px;
+  height: 100%;
+  min-height: 1em;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Horizontal Spacing */
+.horizontal.spacing-none {
+  margin: 0;
+}
+
+.horizontal.spacing-sm {
+  margin: var(--sp-1) 0;
+}
+
+.horizontal.spacing-md {
+  margin: var(--sp-2) 0;
+}
+
+.horizontal.spacing-lg {
+  margin: var(--sp-4) 0;
+}
+
+/* Vertical Spacing */
+.vertical.spacing-none {
+  margin: 0;
+}
+
+.vertical.spacing-sm {
+  margin: 0 var(--sp-1);
+}
+
+.vertical.spacing-md {
+  margin: 0 var(--sp-2);
+}
+
+.vertical.spacing-lg {
+  margin: 0 var(--sp-4);
+}
