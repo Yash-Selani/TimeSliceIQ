@@ -10,3 +10,6 @@ chromadb_data/
 .ruff_cache/
 coverage/
 .vercel
+
+.vercel
+.env*
