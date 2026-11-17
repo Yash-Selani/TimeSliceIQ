@@ -128,17 +128,35 @@ export function useYouTubePlayer(
     const targetSeconds = Math.max(0, seconds);
     setCurrentTime(targetSeconds);
 
+    let handled = false;
     if (playerRef.current) {
       try {
         playerRef.current.seekTo(targetSeconds, true);
         if (playAfterSeek) {
           playerRef.current.playVideo();
         }
+        handled = true;
       } catch (err) {
-        console.warn('YouTube Player seekTo failed:', err);
+        console.warn('YouTube Player seekTo failed, trying postMessage fallback:', err);
       }
     }
-  }, []);
+
+    if (!handled && containerRef.current) {
+      const iframe = containerRef.current.querySelector('iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func: 'seekTo', args: [targetSeconds, true] }),
+          '*'
+        );
+        if (playAfterSeek) {
+          iframe.contentWindow.postMessage(
+            JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+            '*'
+          );
+        }
+      }
+    }
+  }, [containerRef]);
 
   // Lifecycle: Initialize or update player when videoId changes
   useEffect(() => {
@@ -259,7 +277,20 @@ export function useYouTubePlayer(
         })
         .catch((err) => {
           if (!isCancelled) {
-            console.error('Error initializing YouTube player:', err);
+            console.warn('YouTube IFrame API failed to load, falling back to direct embed:', err);
+            if (container) {
+              container.innerHTML = '';
+              const iframe = document.createElement('iframe');
+              iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`;
+              iframe.title = 'YouTube Video Player';
+              iframe.width = '100%';
+              iframe.height = '100%';
+              iframe.style.border = '0';
+              iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+              iframe.allowFullscreen = true;
+              container.appendChild(iframe);
+              setIsReady(true);
+            }
           }
         });
     };

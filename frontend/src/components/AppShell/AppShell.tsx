@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, type TabItem } from '../primitives/Tabs/Tabs';
+import { UserMenu } from '../Auth/UserMenu';
 import styles from './AppShell.module.css';
 
 export interface AppShellProps {
@@ -89,6 +90,8 @@ export const AppShell: React.FC<AppShellProps> = ({
               </button>
             </form>
           )}
+
+          <UserMenu onSelectVideo={onSwitchVideo || (() => {})} />
         </div>
       </header>
 

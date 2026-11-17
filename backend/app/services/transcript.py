@@ -30,6 +30,12 @@ BLOCKED_KEYWORDS = (
     "rate limit",
     "requestblocked",
     "cloud ip",
+    "proxy",
+    "forbidden",
+    "403",
+    "timeout",
+    "timed out",
+    "connection error",
 )
 
 

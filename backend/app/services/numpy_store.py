@@ -1,29 +1,93 @@
 from __future__ import annotations
 
+import json
+import logging
+import os
+import tempfile
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from app.services.vector_store import QueryResult
 
+logger = logging.getLogger(__name__)
+
+
+def _get_cache_dir() -> Path:
+    cache_dir = Path(tempfile.gettempdir()) / "timesliceiq_cache"
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return cache_dir
+
 
 class NumpyVectorStore:
-    """Pure Python + NumPy in-memory vector store implementing the VectorStore protocol."""
+    """Pure Python + NumPy in-memory vector store with /tmp disk caching."""
 
     def __init__(self) -> None:
         self._collections: dict[str, dict[str, Any]] = {}
+        self._cache_dir = _get_cache_dir()
+
+    def _get_cache_path(self, name: str) -> Path:
+        safe_name = "".join(c for c in name if c.isalnum() or c in ("-", "_"))
+        return self._cache_dir / f"col_{safe_name}.npz"
+
+    def _try_load_cache(self, name: str) -> bool:
+        cache_path = self._get_cache_path(name)
+        if not cache_path.exists():
+            return False
+        try:
+            with np.load(cache_path, allow_pickle=True) as data:
+                ids = list(data["ids"])
+                texts = list(data["texts"])
+                embeddings = data["embeddings"]
+                raw_meta = str(data["metadatas"])
+                metadatas = json.loads(raw_meta)
+                self._collections[name] = {
+                    "ids": ids,
+                    "texts": texts,
+                    "embeddings": embeddings,
+                    "metadatas": metadatas,
+                }
+                return True
+        except Exception as exc:
+            logger.debug("Failed to load vector cache from %s: %s", cache_path, exc)
+            return False
+
+    def _save_cache(self, name: str) -> None:
+        if name not in self._collections:
+            return
+        coll = self._collections[name]
+        cache_path = self._get_cache_path(name)
+        try:
+            np.savez_compressed(
+                cache_path,
+                ids=np.array(coll["ids"], dtype=object),
+                texts=np.array(coll["texts"], dtype=object),
+                embeddings=coll["embeddings"],
+                metadatas=json.dumps(coll["metadatas"]),
+            )
+        except Exception as exc:
+            logger.debug("Failed to persist vector cache to %s: %s", cache_path, exc)
 
     async def create_collection(self, name: str) -> None:
-        if name not in self._collections:
-            self._collections[name] = {
-                "ids": [],
-                "texts": [],
-                "embeddings": np.empty((0, 0), dtype=np.float32),
-                "metadatas": [],
-            }
+        if name in self._collections:
+            return
+        if self._try_load_cache(name):
+            return
+        self._collections[name] = {
+            "ids": [],
+            "texts": [],
+            "embeddings": np.empty((0, 0), dtype=np.float32),
+            "metadatas": [],
+        }
 
     async def has_collection(self, name: str) -> bool:
-        return name in self._collections
+        if name in self._collections:
+            return True
+        return self._try_load_cache(name)
 
     async def upsert(
         self,
@@ -55,6 +119,7 @@ class NumpyVectorStore:
             coll["texts"] = list(texts)
             coll["embeddings"] = np.asarray(embeddings, dtype=np.float32)
             coll["metadatas"] = [dict(m) for m in metadatas]
+            self._save_cache(collection_name)
             return
 
         id_to_idx = {id_: i for i, id_ in enumerate(existing_ids)}
@@ -84,12 +149,17 @@ class NumpyVectorStore:
             new_arr = np.asarray(append_embeddings, dtype=np.float32)
             coll["embeddings"] = np.vstack([existing_embeddings, new_arr])
 
+        self._save_cache(collection_name)
+
     async def query(
         self,
         collection_name: str,
         query_embedding: list[float],
         top_k: int = 8,
     ) -> list[QueryResult]:
+        if collection_name not in self._collections:
+            self._try_load_cache(collection_name)
+
         if collection_name not in self._collections or top_k <= 0:
             return []
 

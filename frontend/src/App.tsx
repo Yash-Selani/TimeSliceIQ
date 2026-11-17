@@ -6,11 +6,20 @@ import { PlayerProvider } from '@/contexts/PlayerContext';
 import { ChatThread, type ChatMessageItem } from '@/components/ChatThread';
 import { TranscriptPanel } from '@/components/TranscriptPanel';
 import { LoadingState, ErrorState } from '@/components/ErrorState';
+import { UserMenu } from '@/components/Auth/UserMenu';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import {
+  saveSearchHistory,
+  getChatHistory,
+  saveChatHistory,
+} from '@/services/history';
 import { useIngest } from '@/hooks/useIngest';
 import { useChat } from '@/hooks/useChat';
 import type { IngestResponse, ChatMessage } from '@/lib/api-client';
 
-export const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { user } = useAuth();
+
   // Application State
   const [videoData, setVideoData] = useState<IngestResponse | null>(null);
   const [lastSubmittedUrl, setLastSubmittedUrl] = useState<string>('');
@@ -23,9 +32,28 @@ export const App: React.FC = () => {
   const ingestMutation = useIngest({
     onSuccess: (data) => {
       setVideoData(data);
-      setChatMessages([]);
-      setLastQuestion('');
       setActiveTab('chat');
+      setLastQuestion('');
+
+      // 1. Save to search history
+      saveSearchHistory(
+        {
+          videoId: data.video_id,
+          title: data.title,
+          channel: data.channel,
+          url: lastSubmittedUrl,
+        },
+        user ? user.uid : null
+      );
+
+      // 2. Restore previous chat history for this video if available
+      getChatHistory(data.video_id, user ? user.uid : null).then((saved) => {
+        if (saved && Array.isArray(saved) && saved.length > 0) {
+          setChatMessages(saved as ChatMessageItem[]);
+        } else {
+          setChatMessages([]);
+        }
+      });
     },
   });
 
@@ -38,7 +66,13 @@ export const App: React.FC = () => {
         blocks: response.blocks,
         follow_ups: response.follow_ups,
       };
-      setChatMessages((prev) => [...prev, assistantMessage]);
+      setChatMessages((prev) => {
+        const updated = [...prev, assistantMessage];
+        if (videoData) {
+          saveChatHistory(videoData.video_id, updated, user ? user.uid : null);
+        }
+        return updated;
+      });
     },
   });
 
@@ -61,7 +95,7 @@ export const App: React.FC = () => {
       setLastSubmittedUrl(url);
       ingestMutation.mutate(url);
     },
-    [ingestMutation],
+    [ingestMutation]
   );
 
   const handleSendMessage = useCallback(
@@ -72,8 +106,13 @@ export const App: React.FC = () => {
         role: 'user',
         content: question,
       };
-      setChatMessages((prev) => [...prev, userMessage]);
+
+      const updatedHistory = [...chatMessages, userMessage];
+      setChatMessages(updatedHistory);
       setLastQuestion(question);
+
+      // Save user question to chat history
+      saveChatHistory(videoData.video_id, updatedHistory, user ? user.uid : null);
 
       // Build history for backend
       const history: ChatMessage[] = chatMessages
@@ -89,7 +128,7 @@ export const App: React.FC = () => {
         history,
       });
     },
-    [videoData, chatMessages, chatMutation],
+    [videoData, chatMessages, chatMutation, user]
   );
 
   const handleRetryQuestion = useCallback(() => {
@@ -129,7 +168,8 @@ export const App: React.FC = () => {
             height: '56px',
             display: 'flex',
             alignItems: 'center',
-            padding: '0 var(--sp-3)',
+            justifyContent: 'space-between',
+            padding: '0 var(--sp-4)',
           }}
         >
           <span
@@ -142,6 +182,7 @@ export const App: React.FC = () => {
           >
             TIMESLICEIQ
           </span>
+          <UserMenu onSelectVideo={handleIngest} />
         </header>
         <main
           id="main-content"
@@ -170,7 +211,8 @@ export const App: React.FC = () => {
             height: '56px',
             display: 'flex',
             alignItems: 'center',
-            padding: '0 var(--sp-3)',
+            justifyContent: 'space-between',
+            padding: '0 var(--sp-4)',
           }}
         >
           <button
@@ -190,6 +232,7 @@ export const App: React.FC = () => {
           >
             TIMESLICEIQ
           </button>
+          <UserMenu onSelectVideo={handleIngest} />
         </header>
         <main
           id="main-content"
@@ -202,16 +245,29 @@ export const App: React.FC = () => {
             padding: 'var(--sp-4)',
           }}
         >
-          <ErrorState
-            code={ingestMutation.error?.code || 'INVALID_URL'}
-            description={ingestMutation.error?.message}
-            onRetry={() => {
-              if (lastSubmittedUrl) ingestMutation.mutate(lastSubmittedUrl);
-            }}
-            onAction={() => {
-              ingestMutation.reset();
-            }}
-          />
+          {(() => {
+            const err = ingestMutation.error;
+            const is5xx = (err?.status && err.status >= 500) || err?.code === 'LLM_FAILED';
+            return (
+              <ErrorState
+                code={is5xx ? 'TRANSCRIPT_BLOCKED' : (err?.code || 'INVALID_URL')}
+                title={is5xx ? 'Video Ingestion Failed' : undefined}
+                description={
+                  err?.message ||
+                  (is5xx
+                    ? 'The server took too long to fetch or index this video. Please try again.'
+                    : undefined)
+                }
+                actionLabel={is5xx ? 'Retry Video' : undefined}
+                onRetry={() => {
+                  if (lastSubmittedUrl) ingestMutation.mutate(lastSubmittedUrl);
+                }}
+                onAction={() => {
+                  ingestMutation.reset();
+                }}
+              />
+            );
+          })()}
         </main>
       </div>
     );
@@ -262,6 +318,14 @@ export const App: React.FC = () => {
         }
       />
     </PlayerProvider>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

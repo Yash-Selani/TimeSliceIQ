@@ -119,11 +119,16 @@ async def transcript_error_handler(request: Request, exc: TranscriptError) -> JS
 
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled server exception: %s", exc)
+    msg = str(exc).strip()
+    if not msg:
+        msg = "Internal server processing error. Please try again."
+    elif len(msg) > 120:
+        msg = f"Server error: {type(exc).__name__}. Please try again."
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=ErrorResponse(
             code=ErrorCode.LLM_FAILED,
-            message=ERROR_MESSAGES[ErrorCode.LLM_FAILED],
+            message=msg,
         ).model_dump(),
     )
 

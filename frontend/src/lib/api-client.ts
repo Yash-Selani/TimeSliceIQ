@@ -76,7 +76,9 @@ export class HttpApiClient implements ApiClient {
 
     if (!response.ok) {
       let code: ErrorCode = resolveErrorCode(undefined, response.status);
-      let message = response.statusText || `Request failed with status ${response.status}`;
+      let message = response.statusText || (response.status >= 500
+        ? 'Server processing timed out or encountered an error. Please retry.'
+        : `Request failed with status ${response.status}`);
 
       try {
         const errorData = await response.json();
