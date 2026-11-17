@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import urllib.parse
 from typing import Any
 
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -53,6 +54,7 @@ def _map_exception(exc: Exception, video_id: str) -> TranscriptError:
     if isinstance(exc, TranscriptError):
         return exc
 
+    logger.warning("Transcript fetch failed for video %s: %s: %s", video_id, type(exc).__name__, exc)
     exc_class_name = exc.__class__.__name__
     exc_msg = str(exc).lower()
 
@@ -124,45 +126,82 @@ def _normalize_snippets(raw: Any) -> list[dict]:
     return normalized
 
 
+def _is_cloudflare_worker(url: str | None) -> bool:
+    """Check if the provided proxy URL is a Cloudflare Worker proxy."""
+    if not url:
+        return False
+    u = url.strip().lower()
+    return "workers.dev" in u or "cloudflare" in u or "pages.dev" in u or "/?url=" in u
+
+
+def _attach_cloudflare_worker(api: Any, worker_url: str) -> None:
+    """Route requests made by api._fetcher._http_client through a Cloudflare Worker."""
+    if not hasattr(api, "_fetcher") or not hasattr(api._fetcher, "_http_client"):
+        return
+    session = api._fetcher._http_client
+    original_request = session.request
+    clean_worker = worker_url.strip().rstrip("/")
+    if clean_worker.endswith("/?url="):
+        clean_worker = clean_worker[:-6]
+    elif clean_worker.endswith("?url="):
+        clean_worker = clean_worker[:-5]
+
+    def worker_request(method: str, url: str, *args: Any, **kwargs: Any) -> Any:
+        if isinstance(url, str) and ("youtube.com" in url or "youtu.be" in url):
+            target_url = f"{clean_worker}/?url={urllib.parse.quote(url, safe='')}"
+            return original_request(method, target_url, *args, **kwargs)
+        return original_request(method, url, *args, **kwargs)
+
+    session.request = worker_request
+
+
 def _get_api_instance(proxy_url: str | None = None) -> Any:
     """Instantiate YouTubeTranscriptApi with proxy configuration if provided."""
-    if not proxy_url:
-        return YouTubeTranscriptApi()
+    api: Any
+    is_cf_worker = _is_cloudflare_worker(proxy_url)
 
-    # Try GenericProxyConfig (official youtube-transcript-api >= 1.2.0)
-    try:
-        proxy_config = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url)
-        return YouTubeTranscriptApi(proxy_config=proxy_config)
-    except (TypeError, AttributeError):
-        pass
+    if not proxy_url or is_cf_worker:
+        api = YouTubeTranscriptApi()
+    else:
+        # Traditional forward proxy (e.g. http://user:pass@host:port)
+        try:
+            proxy_config = GenericProxyConfig(http_url=proxy_url, https_url=proxy_url)
+            api = YouTubeTranscriptApi(proxy_config=proxy_config)
+        except (TypeError, AttributeError):
+            # Try proxies keyword argument (for mocks or alternative wrappers)
+            proxies_dict = {"http": proxy_url, "https": proxy_url}
+            try:
+                api = YouTubeTranscriptApi(proxies=proxies_dict)  # type: ignore[call-arg]
+            except TypeError:
+                api = YouTubeTranscriptApi()
 
-    # Try proxies keyword argument (for mocks or alternative wrappers)
-    proxies_dict = {"http": proxy_url, "https": proxy_url}
-    try:
-        return YouTubeTranscriptApi(proxies=proxies_dict)  # type: ignore[call-arg]
-    except TypeError:
-        return YouTubeTranscriptApi()
+    # Route through Cloudflare Worker if configured
+    if is_cf_worker and proxy_url:
+        _attach_cloudflare_worker(api, proxy_url)
+
+    # Configure realistic browser User-Agent to avoid automated bot-detection
+    if hasattr(api, "_fetcher") and hasattr(api._fetcher, "_http_client"):
+        try:
+            api._fetcher._http_client.headers.update({
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/131.0.0.0 Safari/537.36"
+                ),
+                "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
+            })
+        except Exception as exc:
+            logger.debug("Failed to set custom browser headers on YouTube client: %s", exc)
+
+    return api
 
 
 def _fetch_transcript_sync(video_id: str, proxy_url: str | None = None) -> list[dict]:
     """Synchronous internal implementation of transcript fetching."""
     try:
-        # Check if get_transcript is patched/defined on YouTubeTranscriptApi class
-        if (
-            hasattr(YouTubeTranscriptApi, "get_transcript")
-            and "get_transcript" in YouTubeTranscriptApi.__dict__
-            and callable(getattr(YouTubeTranscriptApi, "get_transcript"))
-        ):
-            proxies_dict = {"http": proxy_url, "https": proxy_url} if proxy_url else None
-            try:
-                raw = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies_dict)
-            except TypeError:
-                raw = YouTubeTranscriptApi.get_transcript(video_id)
-            return _normalize_snippets(raw)
-
         api = _get_api_instance(proxy_url)
 
-        # Call fetch on the instance (standard 1.2.3 API)
+        # 1. Standard instance API (youtube-transcript-api >= 1.2.0)
         if hasattr(api, "fetch") and callable(getattr(api, "fetch")):
             try:
                 raw = api.fetch(video_id)
@@ -177,13 +216,16 @@ def _fetch_transcript_sync(video_id: str, proxy_url: str | None = None) -> list[
                         transcripts = list(transcript_list)
                         if not transcripts:
                             raise initial_exc
+                        en = [t for t in transcripts if getattr(t, "language_code", "").startswith("en")]
                         manual = [t for t in transcripts if not getattr(t, "is_generated", False)]
-                        chosen = manual[0] if manual else transcripts[0]
+                        chosen = en[0] if en else (manual[0] if manual else transcripts[0])
                         raw = chosen.fetch()
-                    except Exception:
+                    except Exception as fallback_exc:
+                        logger.warning("Fallback transcript fetch failed for %s: %s", video_id, fallback_exc)
                         raise initial_exc
                 else:
                     raise initial_exc
+        # 2. Method on instance or class for older versions / legacy mocks
         elif hasattr(api, "get_transcript") and callable(getattr(api, "get_transcript")):
             proxies_dict = {"http": proxy_url, "https": proxy_url} if proxy_url else None
             try:
@@ -193,6 +235,7 @@ def _fetch_transcript_sync(video_id: str, proxy_url: str | None = None) -> list[
         elif (
             hasattr(YouTubeTranscriptApi, "get_transcript")
             and callable(getattr(YouTubeTranscriptApi, "get_transcript"))
+            and not isinstance(YouTubeTranscriptApi, type(api))
         ):
             proxies_dict = {"http": proxy_url, "https": proxy_url} if proxy_url else None
             try:
