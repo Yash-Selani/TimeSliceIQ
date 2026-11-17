@@ -1,0 +1,127 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.historyBtn {
+  height: 32px;
+  padding: 0 12px;
+  background-color: transparent;
+  color: var(--text-muted, #aaaaaa);
+  border: 1px solid var(--rule, #333333);
+  border-radius: var(--rad, 2px);
+  font-size: var(--fs-xs, 11px);
+  font-weight: var(--fw-semibold, 600);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.historyBtn:hover {
+  color: var(--text, #ffffff);
+  border-color: var(--text-muted, #666666);
+  background-color: var(--bg-alt, #1a1a1a);
+}
+
+.signInBtn {
+  height: 32px;
+  padding: 0 14px;
+  background-color: var(--text, #ffffff);
+  color: var(--bg, #000000);
+  border: 1px solid var(--text, #ffffff);
+  border-radius: var(--rad, 2px);
+  font-size: var(--fs-xs, 11px);
+  font-weight: var(--fw-semibold, 600);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.signInBtn:hover {
+  opacity: 0.9;
+}
+
+.userPill {
+  height: 32px;
+  padding: 0 10px;
+  background-color: var(--bg-alt, #161616);
+  border: 1px solid var(--rule, #333333);
+  border-radius: var(--rad, 2px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text, #ffffff);
+  font-size: var(--fs-xs, 11px);
+  font-weight: var(--fw-medium, 500);
+}
+
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--rule, #444444);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 200px;
+  background-color: var(--bg-surface, #141414);
+  border: 1px solid var(--rule, #333333);
+  border-radius: var(--rad, 2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+}
+
+.userEmail {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-muted, #888888);
+  border-bottom: 1px solid var(--rule, #222222);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdownItem {
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--fs-xs, 12px);
+  color: var(--text, #ffffff);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdownItem:hover {
+  background-color: var(--bg-alt, #222222);
+  color: var(--accent, #e53e3e);
+}
