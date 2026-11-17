@@ -17,15 +17,28 @@ function renderWithClient(ui: React.ReactElement) {
 }
 
 describe('App', () => {
-  it('renders the TimeSliceIQ Landing state initially', () => {
+  it('renders AuthGate initially when user is not signed in', () => {
+    sessionStorage.clear();
     renderWithClient(<App />);
+    expect(screen.getByRole('heading', { level: 1, name: /sign in to timesliceiq/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /continue with google/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /continue as guest/i })).toBeInTheDocument();
+  });
+
+  it('entering as guest unlocks the TimeSliceIQ Landing state', () => {
+    sessionStorage.clear();
+    renderWithClient(<App />);
+    const guestBtn = screen.getByRole('button', { name: /continue as guest/i });
+    fireEvent.click(guestBtn);
+
     expect(screen.getByRole('heading', { level: 1, name: /timesliceiq/i })).toBeInTheDocument();
     const main = screen.getByRole('main');
     expect(main).toHaveAttribute('id', 'main-content');
     expect(screen.getByLabelText(/youtube lecture url/i)).toBeInTheDocument();
   });
 
-  it('transitions to workspace upon successful video ingest', async () => {
+  it('transitions to workspace upon successful video ingest when authenticated', async () => {
+    sessionStorage.setItem('timesliceiq_guest_session', '1');
     const mockIngestData: apiClientModule.IngestResponse = {
       video_id: 'abc12345678',
       title: 'Neural Networks 101',

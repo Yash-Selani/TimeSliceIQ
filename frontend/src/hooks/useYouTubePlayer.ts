@@ -212,6 +212,58 @@ export function useYouTubePlayer(
             playerRef.current = null;
           }
 
+          // If React already rendered a direct iframe embed in the container, bind directly to it
+          const existingIframe = targetContainer.querySelector('iframe');
+          if (existingIframe) {
+            const player = new window.YT!.Player(existingIframe, {
+              events: {
+                onReady: (event) => {
+                  if (isCancelled) return;
+                  playerRef.current = event.target;
+                  setIsReady(true);
+                  try {
+                    const dur = event.target.getDuration();
+                    if (typeof dur === 'number' && dur > 0) {
+                      setDuration(dur);
+                    }
+                  } catch {
+                    // ignore
+                  }
+                  optionsRef.current.onReady?.(event.target);
+                },
+                onStateChange: (event) => {
+                  if (isCancelled) return;
+                  const state = event.data;
+                  const playing = state === 1; // YT.PlayerState.PLAYING
+                  setIsPlaying(playing);
+
+                  if (playing) {
+                    try {
+                      const time = event.target.getCurrentTime();
+                      if (typeof time === 'number' && !Number.isNaN(time)) {
+                        setCurrentTime(time);
+                      }
+                      const dur = event.target.getDuration();
+                      if (typeof dur === 'number' && dur > 0) {
+                        setDuration(dur);
+                      }
+                    } catch {
+                      // ignore
+                    }
+                  }
+                  optionsRef.current.onStateChange?.(state);
+                },
+                onError: (event) => {
+                  console.warn('YouTube Player error code:', event.data);
+                },
+              },
+            });
+
+            playerRef.current = player;
+            setIsReady(true);
+            return;
+          }
+
           // Clear container and create mount slot
           targetContainer.innerHTML = '';
           const slot = document.createElement('div');
@@ -277,8 +329,8 @@ export function useYouTubePlayer(
         })
         .catch((err) => {
           if (!isCancelled) {
-            console.warn('YouTube IFrame API failed to load, falling back to direct embed:', err);
-            if (container) {
+            console.warn('YouTube IFrame API failed to load, keeping direct embed:', err);
+            if (container && !container.querySelector('iframe')) {
               container.innerHTML = '';
               const iframe = document.createElement('iframe');
               iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`;
@@ -289,8 +341,8 @@ export function useYouTubePlayer(
               iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
               iframe.allowFullscreen = true;
               container.appendChild(iframe);
-              setIsReady(true);
             }
+            setIsReady(true);
           }
         });
     };

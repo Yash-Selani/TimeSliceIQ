@@ -6,7 +6,7 @@ import { PlayerProvider } from '@/contexts/PlayerContext';
 import { ChatThread, type ChatMessageItem } from '@/components/ChatThread';
 import { TranscriptPanel } from '@/components/TranscriptPanel';
 import { LoadingState, ErrorState } from '@/components/ErrorState';
-import { UserMenu } from '@/components/Auth/UserMenu';
+import { UserMenu, AuthGate } from '@/components/Auth';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import {
   saveSearchHistory,
@@ -18,7 +18,7 @@ import { useChat } from '@/hooks/useChat';
 import type { IngestResponse, ChatMessage } from '@/lib/api-client';
 
 const AppContent: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
 
   // Application State
   const [videoData, setVideoData] = useState<IngestResponse | null>(null);
@@ -157,6 +157,52 @@ const AppContent: React.FC = () => {
     ingestMutation.reset();
     chatMutation.reset();
   }, [ingestMutation, chatMutation]);
+
+  // 0. Auth gate: require signing or login first before entering website features
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+        <header
+          style={{
+            borderBottom: '1px solid var(--rule)',
+            height: '56px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 var(--sp-4)',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 'var(--fs-lg)',
+              fontWeight: 'var(--fw-semibold)',
+              letterSpacing: '-0.03em',
+              textTransform: 'uppercase',
+            }}
+          >
+            TIMESLICEIQ
+          </span>
+        </header>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 'var(--sp-4)',
+          }}
+        >
+          <LoadingState stage={1} />
+        </main>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthGate />;
+  }
 
   // 1. Loading state when no video is loaded yet
   if (!videoData && ingestMutation.isPending) {

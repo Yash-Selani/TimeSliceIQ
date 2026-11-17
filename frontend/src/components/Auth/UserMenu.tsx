@@ -9,7 +9,7 @@ export interface UserMenuProps {
 }
 
 export const UserMenu: React.FC<UserMenuProps> = ({ onSelectVideo }) => {
-  const { user, signOutUser } = useAuth();
+  const { user, isGuest, signOutUser } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -86,6 +86,51 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onSelectVideo }) => {
                   onClick={handleSignOut}
                 >
                   Sign Out
+                </button>
+              </div>
+            )}
+          </>
+        ) : isGuest ? (
+          <>
+            <button
+              type="button"
+              className={styles.userPill}
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              aria-label="Guest user menu"
+            >
+              <span className={styles.avatarPlaceholder}>G</span>
+              <span>Guest User</span>
+            </button>
+
+            {isDropdownOpen && (
+              <div className={styles.dropdown}>
+                <div className={styles.userEmail}>Local Mode (No Cloud Sync)</div>
+                <button
+                  type="button"
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsAuthOpen(true);
+                  }}
+                >
+                  Sign In with Firebase
+                </button>
+                <button
+                  type="button"
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsHistoryOpen(true);
+                  }}
+                >
+                  Saved Videos
+                </button>
+                <button
+                  type="button"
+                  className={styles.dropdownItem}
+                  onClick={handleSignOut}
+                >
+                  Exit Guest Mode
                 </button>
               </div>
             )}
