@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatAuthError } from '../../lib/auth-errors';
 import styles from './AuthModal.module.css';
 
 export interface AuthModalProps {
@@ -24,8 +25,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       await signInWithGoogle();
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google sign-in failed.';
-      setError(msg);
+      const formatted = formatAuthError(err);
+      if (formatted) {
+        setError(formatted);
+      }
     } finally {
       setLoading(false);
     }
@@ -47,8 +50,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       }
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Authentication failed.';
-      setError(msg);
+      const formatted = formatAuthError(err);
+      if (formatted) {
+        setError(formatted);
+      }
     } finally {
       setLoading(false);
     }

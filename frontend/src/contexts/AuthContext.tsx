@@ -8,6 +8,8 @@ import {
 import {
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -48,6 +50,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // Complete any pending Google redirect sign-in gracefully
+    getRedirectResult(auth).catch((err) => {
+      console.warn('Redirect sign-in check failed:', err);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -73,8 +80,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!auth || !googleProvider) {
       throw new Error('Firebase Authentication is not configured yet. Please provide Firebase keys.');
     }
-    await signInWithPopup(auth, googleProvider);
-    setIsGuest(false);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      setIsGuest(false);
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || '';
+      const msg = err instanceof Error ? err.message : '';
+      // If popup is blocked by browser/extensions or unsupported in environment, fall back to redirect
+      if (
+        code === 'auth/popup-blocked' ||
+        code === 'auth/operation-not-supported-in-this-environment' ||
+        msg.includes('popup-blocked')
+      ) {
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
+      throw err;
+    }
   };
 
   const signInWithEmail = async (email: string, pass: string) => {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatAuthError } from '../../lib/auth-errors';
 import styles from './AuthGate.module.css';
 
 export interface AuthGateProps {
@@ -28,8 +29,10 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onSuccess }) => {
       await signInWithGoogle();
       onSuccess?.();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google sign-in failed.';
-      setError(msg);
+      const formatted = formatAuthError(err);
+      if (formatted) {
+        setError(formatted);
+      }
     } finally {
       setLoading(false);
     }
@@ -51,8 +54,10 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onSuccess }) => {
       }
       onSuccess?.();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Authentication failed.';
-      setError(msg);
+      const formatted = formatAuthError(err);
+      if (formatted) {
+        setError(formatted);
+      }
     } finally {
       setLoading(false);
     }
