@@ -22,15 +22,32 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   const [historyItems, setHistoryItems] = useState<SearchHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const userId = user ? user.uid : null;
+
   useEffect(() => {
-    if (isOpen) {
-      setLoading(true);
-      getSearchHistory(user ? user.uid : null)
-        .then((items) => setHistoryItems(items))
-        .catch((err) => console.warn('Failed to load history:', err))
-        .finally(() => setLoading(false));
-    }
-  }, [isOpen, user]);
+    // Immediately clear stale items whenever the active user changes
+    setHistoryItems([]);
+    if (!isOpen) return;
+
+    let cancelled = false;
+    setLoading(true);
+    getSearchHistory(userId)
+      .then((items) => {
+        if (!cancelled) {
+          setHistoryItems(items);
+        }
+      })
+      .catch((err) => console.warn('Failed to load history:', err))
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, userId]);
 
   if (!isOpen) return null;
 

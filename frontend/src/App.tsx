@@ -41,13 +41,15 @@ const AppContent: React.FC = () => {
           videoId: data.video_id,
           title: data.title,
           channel: data.channel,
-          url: lastSubmittedUrl,
+          url: lastSubmittedUrl || `https://www.youtube.com/watch?v=${data.video_id}`,
         },
         user ? user.uid : null
       );
 
-      // 2. Restore previous chat history for this video if available
-      getChatHistory(data.video_id, user ? user.uid : null).then((saved) => {
+      // 2. Clear previous video's chat immediately and restore this user's saved chat for this video
+      setChatMessages([]);
+      const activeUid = user ? user.uid : null;
+      getChatHistory(data.video_id, activeUid).then((saved) => {
         if (saved && Array.isArray(saved) && saved.length > 0) {
           setChatMessages(saved as ChatMessageItem[]);
         } else {
@@ -367,10 +369,16 @@ const AppContent: React.FC = () => {
   );
 };
 
+const SessionBoundary: React.FC = () => {
+  const { user, isGuest } = useAuth();
+  const sessionKey = user ? `user:${user.uid}` : isGuest ? 'guest' : 'signed-out';
+  return <AppContent key={sessionKey} />;
+};
+
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <SessionBoundary />
     </AuthProvider>
   );
 };
