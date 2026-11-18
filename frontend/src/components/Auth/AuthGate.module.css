@@ -36,18 +36,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--sp-6) var(--sp-4);
+  padding: var(--sp-4);
 }
 
 .authCard {
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
   background-color: var(--surface);
   border: 2px solid var(--rule);
-  padding: var(--sp-6);
+  padding: var(--sp-4);
   display: flex;
   flex-direction: column;
-  gap: var(--sp-4);
+  gap: var(--sp-3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
 .cardHeader {
@@ -59,67 +60,76 @@
 .metaLabel {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  color: var(--red);
+  color: var(--accent);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-weight: var(--fw-semibold);
 }
 
 .title {
   font-family: var(--font-sans);
-  font-size: var(--fs-2xl);
+  font-size: 1.85rem;
   font-weight: var(--fw-semibold);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
   margin: 0;
   color: var(--text);
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
 }
 
 .subhead {
   font-family: var(--font-sans);
   font-size: var(--fs-sm);
   color: var(--text-muted);
-  line-height: 1.45;
+  line-height: 1.5;
   margin: 0;
+  margin-top: 2px;
 }
 
 .errorBanner {
-  background-color: rgba(235, 0, 41, 0.1);
-  border: 1px solid var(--red);
-  color: var(--red);
-  font-family: var(--font-mono);
+  background-color: rgba(255, 92, 92, 0.1);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-family: var(--font-sans);
   font-size: var(--fs-xs);
   padding: var(--sp-2) var(--sp-3);
-  line-height: 1.4;
+  line-height: 1.45;
+  border-radius: var(--radius);
 }
 
 .infoBanner {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: var(--surface-2);
   border: 1px solid var(--rule);
   color: var(--text-muted);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--fs-xs);
   padding: var(--sp-2) var(--sp-3);
-  line-height: 1.4;
+  line-height: 1.45;
+  border-radius: var(--radius);
 }
 
 .googleBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   width: 100%;
   height: 44px;
   background-color: #ffffff;
   color: #1a1a1a;
   border: 1px solid #ffffff;
+  border-radius: var(--radius);
   font-family: var(--font-sans);
   font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition: opacity 150ms ease;
+  transition: opacity var(--transition-fast);
 }
 
 .googleBtn:hover:not(:disabled) {
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .googleBtn:disabled {
@@ -130,12 +140,13 @@
 .googleIcon {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
 }
 
 .divider {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   margin: var(--sp-1) 0;
 }
 
@@ -156,7 +167,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
 }
 
 .fieldGroup {
@@ -178,30 +189,33 @@
   height: 40px;
   background-color: var(--bg);
   border: 1px solid var(--rule);
+  border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: var(--fs-sm);
-  padding: 0 var(--sp-3);
+  padding: 0 var(--sp-2);
   outline: none;
-  transition: border-color 150ms ease;
+  transition: border-color var(--transition-fast);
 }
 
 .input:focus {
-  border-color: var(--text);
+  border-color: var(--accent);
 }
 
 .submitBtn {
-  height: 44px;
+  height: 42px;
   background-color: var(--text);
   color: var(--bg);
   border: 1px solid var(--text);
+  border-radius: var(--radius);
   font-family: var(--font-sans);
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.02em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  margin-top: var(--sp-1);
 }
 
 .submitBtn:hover:not(:disabled) {
@@ -223,7 +237,7 @@
   cursor: pointer;
   padding: var(--sp-1) 0;
   text-align: center;
-  transition: color 150ms ease;
+  transition: color var(--transition-fast);
 }
 
 .toggleBtn:hover {
@@ -231,20 +245,21 @@
 }
 
 .guestBtn {
-  height: 40px;
+  height: 38px;
   background-color: transparent;
-  color: var(--text);
-  border: 1px solid var(--rule);
+  color: var(--text-muted);
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius);
   font-family: var(--font-sans);
   font-size: var(--fs-xs);
   font-weight: var(--fw-medium);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .guestBtn:hover {
   border-color: var(--text);
-  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  background-color: var(--surface-2);
 }

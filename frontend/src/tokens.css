@@ -10,6 +10,7 @@
   --accent-hover: #FF8533;
   --accent-ink: #0D0D0D;
   --danger: #FF5C5C;
+  --red: #EB0029;
 
   /* === Type scale (Inter) === */
   --fs-xs: 0.75rem;   /* 12px */
@@ -22,7 +23,9 @@
   --fw-regular: 400;
   --fw-semibold: 600;
 
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: var(--font-family);
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
 
   /* === Spacing (8px baseline) === */
   --sp-1: 0.5rem;   /* 8px */
